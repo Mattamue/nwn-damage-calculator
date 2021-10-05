@@ -1,32 +1,36 @@
 from random import randint
 from math   import floor
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
 #####################################################################
 # DEFINES
-ROUNDS = 500000
+ROUNDS = 500
 
 WEAPON = {
-    "name"                : "GMW Naginata",
+    "name"                : "Dwaraxe SS",
     "damage"              : "1d10",
-    "damage_bonus"        : 5 + 21,
+    "damage_bonus"        : 4 + 19,
     "threat_range"        : 19,
-    "crit_multiplier"     : 2,
+    "crit_multiplier"     : 3,
     "other_damage_bonus"  : [
-        # {"name" : "Positive", "damage" : 4, "resistable" : True},
-        {"name" : "Divine", "damage" : "1d6", "resistable" : True},
-        {"name" : "Positive", "damage" : 2, "resistable" : False},
-        {"name" : "Negative", "damage" : 2, "resistable" : False}
+        {"name" : "Positive", "damage" : 4, "resistable" : True},
+        {"name" : "Divine", "damage" : "1d4", "resistable" : True},
+        {"name" : "Fire", "damage" : "1d12", "resistable" : False},
+        {"name" : "Cold", "damage" : "1d12", "resistable" : False}
     ]
 }
 
 CHARACTER = {
-    "ab"                    : 50,
-    "base_apr"              : 6,
+    "ab"                    : 48,
+    "base_apr"              : 4,
     "dual_wielding"         : False,
     "extra_attack"          : 1, # haste, etc
     "overwhelming_critical" : False,
     "thundering_rage"       : False,
-    "is_monk"               : True # If character is monk, AB penalty is set to -3 from -5 for consecutively attacks.
+    "is_monk"               : False # If character is monk, AB penalty is set to -3 from -5 for consecutively attacks.
 }
 
 TARGET = {
@@ -286,25 +290,59 @@ print_f("\n-=[RESULTS]=-")
 
 results = sorted([(key, result_list[key]) for key in result_list])
 
-for target_ac, result in results:
-    print_f()
-    print_f("TARGET AC", str(target_ac))
-    print_f("TOTAL ATTACK", str(result["total_attack"]))
-    print_f("TOTAL HIT", str(result["total_hit"])+" ({0:.2f}% of total attacks)".format(calculate_percentage(result["total_hit"], result["total_attack"])))
-    print_f("TOTAL MISS", str(result["total_miss"])+" ({0:.2f}% of total attacks)".format(calculate_percentage(result["total_miss"], result["total_attack"])))
-    print_f("    * CONCEALED ATTACKS", str(result["total_concealed"])+" ({0:.2f}% of total misses)".format(calculate_percentage(result["total_concealed"], result["total_miss"])))
-    print_f("    * EPIC DODGE", str(result["total_epic_dodge"])+" ({0:.2f}% of total misses)".format(calculate_percentage(result["total_epic_dodge"], result["total_miss"])))
-    print_f("TOTAL CRITICAL HIT", str(result["total_crit"])+" ({0:.2f}% of total hits)".format(calculate_percentage(result["total_crit"], result["total_hit"])))
-    print_f()
-    print_f("TOTAL DAMAGE", str(result["total_damage"]))
-    print_f("TOTAL WEAPON DAMAGE", str(result["total_weapon_damage"])+" ({0:.2f}% of total damage)".format(calculate_percentage(result["total_weapon_damage"], result["total_damage"])))
-    print_f("TOTAL OTHER DAMAGE", str(result["total_damage"] - result["total_weapon_damage"])+" ({0:.2f}% of total damage)".format(calculate_percentage(result["total_damage"] - result["total_weapon_damage"], result["total_damage"])))
-    for name in result["total_bonus_damage"].keys():
-        dmg = result["total_bonus_damage"][name]
-        print_f("    * "+name.upper(), str(dmg))
-    print_f()
-    print_f("AVARAGE DAMAGE PER ROUND", "{0:.2f}".format(result["total_damage"] / ROUNDS))
-    print_f("\n"+"="*50)
+# print(results)
 
-with open("result.txt", "w") as f:
-    f.write(RESULT_STR)
+"""
+[(20, {'total_attack': 350, 'total_hit': 258, 'total_miss': 92, 'total_concealed': 75, 'total_epic_dodge': 0, 'total_crit': 27, 'total_damage': 10264, 'total_weapon_damage': 9032, 'total_bonus_damage': {'Divine': 92, 'Positive': 570, 'Negative': 570}}),
+(25, {'total_attack': 350, 'total_hit': 252, 'total_miss': 98, 'total_concealed': 83, 'total_epic_dodge': 0, 'total_crit': 25, 'total_damage': 9915, 'total_weapon_damage': 8715, 'total_bonus_damage': {'Divine': 92, 'Positive': 554, 'Negative': 554}}),
+(30, {'total_attack': 350, 'total_hit': 253, 'total_miss': 97, 'total_concealed': 81, 'total_epic_dodge': 0, 'total_crit': 30, 'total_damage': 10249, 'total_weapon_damage': 9014, 'total_bonus_damage': {'Divine': 103, 'Positive': 566, 'Negative': 566}}),
+(35, {'total_attack': 350, 'total_hit': 250, 'total_miss': 100, 'total_concealed': 90, 'total_epic_dodge': 0, 'total_crit': 37, 'total_damage': 10260, 'total_weapon_damage': 8990, 'total_bonus_damage': {'Divine': 122, 'Positive': 574, 'Negative': 574}}),
+(40, {'total_attack': 350, 'total_hit': 237, 'total_miss': 113, 'total_concealed': 89, 'total_epic_dodge': 0, 'total_crit': 25, 'total_damage': 9289, 'total_weapon_damage': 8147, 'total_bonus_damage': {'Divine': 94, 'Positive': 524, 'Negative': 524}}),
+(45, {'total_attack': 350, 'total_hit': 209, 'total_miss': 141, 'total_concealed': 100, 'total_epic_dodge': 0, 'total_crit': 21, 'total_damage': 8198, 'total_weapon_damage': 7199, 'total_bonus_damage': {'Divine': 79, 'Positive': 460, 'Negative': 460}}),
+(50, {'total_attack': 350, 'total_hit': 179, 'total_miss': 171, 'total_concealed': 81, 'total_epic_dodge': 0, 'total_crit': 22, 'total_damage': 7177, 'total_weapon_damage': 6304, 'total_bonus_damage': {'Divine': 69, 'Positive': 402, 'Negative': 402}}),
+(55, {'total_attack': 350, 'total_hit': 123, 'total_miss': 227, 'total_concealed': 81, 'total_epic_dodge': 0, 'total_crit': 15, 'total_damage': 4939, 'total_weapon_damage': 4341, 'total_bonus_damage': {'Divine': 46, 'Positive': 276, 'Negative': 276}}),
+(60, {'total_attack': 350, 'total_hit': 74, 'total_miss': 276, 'total_concealed': 80, 'total_epic_dodge': 0, 'total_crit': 8, 'total_damage': 2890, 'total_weapon_damage': 2524, 'total_bonus_damage': {'Divine': 38, 'Positive': 164, 'Negative': 164}}),
+(65, {'total_attack': 350, 'total_hit': 28, 'total_miss': 322, 'total_concealed': 90, 'total_epic_dodge': 0, 'total_crit': 2, 'total_damage': 1097, 'total_weapon_damage': 971, 'total_bonus_damage': {'Divine': 6, 'Positive': 60, 'Negative': 60}}),
+(70, {'total_attack': 350, 'total_hit': 16, 'total_miss': 334, 'total_concealed': 84, 'total_epic_dodge': 0, 'total_crit': 0, 'total_damage': 553, 'total_weapon_damage': 489, 'total_bonus_damage': {'Divine': 0, 'Positive': 32, 'Negative': 32}})]
+"""
+
+ac_list = []
+
+for tuple_entry in results:
+    ac_list.append(tuple_entry[0])
+
+damage_list = []
+
+for tuple_entry in results:
+    damage_list.append(tuple_entry[1]['total_damage'] / tuple_entry[1]['total_attack'])
+
+damage_data_df = pd.DataFrame(ac_list, columns=["AC"])
+
+damage_data_df['Avg Dmg'] = damage_list
+
+damage_data_df.set_index('AC').plot(kind='bar',title="Avg Dmg per AC")
+
+plt.show()
+
+# for target_ac, result in results:
+#     print_f()
+#     print_f("TARGET AC", str(target_ac))
+#     print_f("TOTAL ATTACK", str(result["total_attack"]))
+#     print_f("TOTAL HIT", str(result["total_hit"])+" ({0:.2f}% of total attacks)".format(calculate_percentage(result["total_hit"], result["total_attack"])))
+#     print_f("TOTAL MISS", str(result["total_miss"])+" ({0:.2f}% of total attacks)".format(calculate_percentage(result["total_miss"], result["total_attack"])))
+#     print_f("    * CONCEALED ATTACKS", str(result["total_concealed"])+" ({0:.2f}% of total misses)".format(calculate_percentage(result["total_concealed"], result["total_miss"])))
+#     print_f("    * EPIC DODGE", str(result["total_epic_dodge"])+" ({0:.2f}% of total misses)".format(calculate_percentage(result["total_epic_dodge"], result["total_miss"])))
+#     print_f("TOTAL CRITICAL HIT", str(result["total_crit"])+" ({0:.2f}% of total hits)".format(calculate_percentage(result["total_crit"], result["total_hit"])))
+#     print_f()
+#     print_f("TOTAL DAMAGE", str(result["total_damage"]))
+#     print_f("TOTAL WEAPON DAMAGE", str(result["total_weapon_damage"])+" ({0:.2f}% of total damage)".format(calculate_percentage(result["total_weapon_damage"], result["total_damage"])))
+#     print_f("TOTAL OTHER DAMAGE", str(result["total_damage"] - result["total_weapon_damage"])+" ({0:.2f}% of total damage)".format(calculate_percentage(result["total_damage"] - result["total_weapon_damage"], result["total_damage"])))
+#     for name in result["total_bonus_damage"].keys():
+#         dmg = result["total_bonus_damage"][name]
+#         print_f("    * "+name.upper(), str(dmg))
+#     print_f()
+#     print_f("AVARAGE DAMAGE PER ROUND", "{0:.2f}".format(result["total_damage"] / ROUNDS))
+#     print_f("\n"+"="*50)
+
+# with open("result.txt", "w") as f:
+#     f.write(RESULT_STR)
